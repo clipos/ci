@@ -41,7 +41,7 @@ save_artifact_tar_zstd() {
 
 upload_artifact() {
     local src="${1}"
-    local dest="gitlab/${CI_PIPELINE_IID}"
+    local dest="gitlab/${CI_PIPELINE_ID}"
 
     if [[ -z "${ARTIFACTS_FTP_URL:+x}" ]]; then
         >&2 echo "ARTIFACTS_FTP_URL is not set or empty. Skipping artifacts upload."
