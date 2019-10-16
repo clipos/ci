@@ -11,7 +11,7 @@ save_artifact() {
 
 save_artifact_tar() {
     local src="${1}"
-    local dst=".artifacts/${2}"
+    local dst=".artifacts/${2}.tar"
 
     mkdir -p .artifacts
     bsdtar --verbose --create --file "${dst}" "${src}"
@@ -21,7 +21,7 @@ save_artifact_tar() {
 
 save_artifact_zstd() {
     local src="${1}"
-    local dst=".artifacts/${2}"
+    local dst=".artifacts/${2}.zst"
 
     mkdir -p .artifacts
     zstd --compress "${src}" -o "${dst}"
@@ -31,7 +31,7 @@ save_artifact_zstd() {
 
 save_artifact_tar_zstd() {
     local src="${1}"
-    local dst=".artifacts/${2}"
+    local dst=".artifacts/${2}.tar.zst"
 
     mkdir -p .artifacts
     bsdtar --verbose --zstd --create --file "${dst}" "${src}"
@@ -93,46 +93,46 @@ main() {
 
     # Build SDK
     cosmk bootstrap 'clipos/sdk'
-    save_artifact_tar "cache/clipos/${version}/sdk/rootfs.squashfs" 'sdk.tar'
+    save_artifact_tar "cache/clipos/${version}/sdk/rootfs.squashfs" 'sdk'
 
     # Build Core
     cosmk build 'clipos/core'
-    save_artifact_tar      "cache/clipos/${version}/core/binpkgs" 'core_pkgs.tar'
-    save_artifact_tar_zstd "cache/clipos/${version}/core/build"   'core_build_logs.tar.zstd'
+    save_artifact_tar      "cache/clipos/${version}/core/binpkgs" 'core_pkgs'
+    save_artifact_tar_zstd "cache/clipos/${version}/core/build"   'core_build_logs'
 
     cosmk image 'clipos/core'
-    save_artifact_tar      "cache/clipos/${version}/core/image"   'core_image_logs.tar'
+    save_artifact_tar_zstd "cache/clipos/${version}/core/image"   'core_image_logs'
 
     cosmk configure 'clipos/core'
 
     cosmk bundle 'clipos/core'
-    save_artifact_tar      "out/clipos/${version}/core/bundle"    'core_bundle.tar'
+    save_artifact_tar      "out/clipos/${version}/core/bundle"    'core_bundle'
 
     # Build EFI boot
     cosmk build 'clipos/efiboot'
-    save_artifact_tar      "cache/clipos/${version}/efiboot/binpkgs" 'efiboot_pkgs.tar'
-    save_artifact_tar_zstd "cache/clipos/${version}/efiboot/build"   'efiboot_build_logs.tar.zstd'
+    save_artifact_tar      "cache/clipos/${version}/efiboot/binpkgs" 'efiboot_pkgs'
+    save_artifact_tar_zstd "cache/clipos/${version}/efiboot/build"   'efiboot_build_logs'
 
     cosmk image 'clipos/efiboot'
-    save_artifact_tar      "cache/clipos/${version}/efiboot/image"   'efiboot_image_logs.tar'
+    save_artifact_tar_zstd "cache/clipos/${version}/efiboot/image"   'efiboot_image_logs'
 
     cosmk configure 'clipos/efiboot'
-    save_artifact_tar      "out/clipos/${version}/efiboot/configure/OVMF_CODE_sb-tpm.fd" 'efiboot_ovmf.tar'
+    save_artifact_tar      "out/clipos/${version}/efiboot/configure/OVMF_CODE_sb-tpm.fd" 'efiboot_ovmf'
 
     cosmk bundle 'clipos/efiboot'
-    save_artifact_tar      "out/clipos/${version}/efiboot/bundle"    'efiboot_bundle.tar'
+    save_artifact_tar      "out/clipos/${version}/efiboot/bundle"    'efiboot_bundle'
 
     # Build Debian SDK
     cosmk bootstrap 'clipos/sdk_debian'
-    save_artifact_tar      "cache/clipos/${version}/sdk_debian/rootfs.squashfs" 'sdk_debian.tar'
+    save_artifact_tar      "cache/clipos/${version}/sdk_debian/rootfs.squashfs" 'sdk_debian'
 
     # Build QEMU image
     cosmk bundle 'clipos/qemu'
-    save_artifact_tar_zstd "out/clipos/${version}/qemu/bundle/main.qcow2" 'qemu.tar.zstd'
+    save_artifact_tar_zstd "out/clipos/${version}/qemu/bundle/main.qcow2" 'qemu'
     rm "cache/clipos/${version}/qemu/bundle/empty.qcow2"
     mv "out/clipos/${version}/qemu/bundle/qemu-core-state.tar" \
         "cache/clipos/${version}/qemu/bundle/"
-    save_artifact_tar_zstd "cache/clipos/${version}/qemu/bundle/" "qemu_misc.tar.zstd"
+    save_artifact_tar_zstd "cache/clipos/${version}/qemu/bundle/" "qemu_misc"
 }
 
 main ${@}
