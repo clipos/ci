@@ -117,10 +117,11 @@ main() {
     save_artifact_tar_zstd "cache/clipos/${version}/efiboot/image"   'efiboot_image_logs'
 
     cosmk configure 'clipos/efiboot'
-    save_artifact_tar      "out/clipos/${version}/efiboot/configure/OVMF_CODE_sb-tpm.fd" 'efiboot_ovmf'
 
     cosmk bundle 'clipos/efiboot'
-    save_artifact_tar      "out/clipos/${version}/efiboot/bundle"    'efiboot_bundle'
+    # Remove uneeded temporary directory
+    rm -rf "out/clipos/${version}/efiboot/bundle/root"
+    save_artifact_tar_zstd  "out/clipos/${version}/efiboot/bundle"   'efiboot_bundle'
 
     # Build Debian SDK
     cosmk bootstrap 'clipos/sdk_debian'
@@ -128,11 +129,27 @@ main() {
 
     # Build QEMU image
     cosmk bundle 'clipos/qemu'
-    save_artifact_tar_zstd "out/clipos/${version}/qemu/bundle/main.qcow2" 'qemu'
-    rm "cache/clipos/${version}/qemu/bundle/empty.qcow2"
-    mv "out/clipos/${version}/qemu/bundle/qemu-core-state.tar" \
-        "cache/clipos/${version}/qemu/bundle/"
-    save_artifact_tar_zstd "cache/clipos/${version}/qemu/bundle/" "qemu_misc"
+
+    # Prepare standalone QEMU image bundle
+    mkdir -p "clipos_${version}_qemu"
+
+    rm  "cache/clipos/${version}/qemu/bundle/empty.qcow2"
+
+    mv  "out/clipos/${version}/qemu/bundle/main.qcow2" \
+        "out/clipos/${version}/qemu/bundle/qemu-core-state.tar" \
+        "cache/clipos/${version}/qemu/bundle/"* \
+        "clipos_${version}_qemu"
+
+    mv  "out/clipos/${version}/efiboot/configure/OVMF_CODE_sb-tpm.fd" \
+        "clipos_${version}_qemu/OVMF_CODE.fd"
+
+    cp  "products/clipos/efiboot/configure.d/dummy_keys_secure_boot/OVMF_VARS.fd" \
+        "clipos_${version}_qemu"
+
+    cp  "../README_qemu.md" "clipos_${version}_qemu/README.md"
+    cp  "../qemu.sh" "clipos_${version}_qemu"
+
+    save_artifact_tar_zstd  "clipos_${version}_qemu"  'qemu'
 }
 
 main ${@}
