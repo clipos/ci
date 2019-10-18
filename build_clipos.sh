@@ -9,26 +9,6 @@ save_artifact() {
     upload_artifact "${src}"
 }
 
-save_artifact_tar() {
-    local src="${1}"
-    local dst=".artifacts/${2}.tar"
-
-    mkdir -p .artifacts
-    bsdtar --verbose --create --file "${dst}" "${src}"
-
-    upload_artifact "${dst}"
-}
-
-save_artifact_zstd() {
-    local src="${1}"
-    local dst=".artifacts/${2}.zst"
-
-    mkdir -p .artifacts
-    zstd --compress "${src}" -o "${dst}"
-
-    upload_artifact "${dst}"
-}
-
 save_artifact_tar_zstd() {
     local src="${1}"
     local dst=".artifacts/${2}.tar.zst"
@@ -93,11 +73,11 @@ main() {
 
     # Build SDK
     cosmk bootstrap 'clipos/sdk'
-    save_artifact_tar "cache/clipos/${version}/sdk/rootfs.squashfs" 'sdk'
+    save_artifact_tar_zstd "cache/clipos/${version}/sdk/rootfs.squashfs" 'sdk'
 
     # Build Core
     cosmk build 'clipos/core'
-    save_artifact_tar      "cache/clipos/${version}/core/binpkgs" 'core_pkgs'
+    save_artifact_tar_zstd "cache/clipos/${version}/core/binpkgs" 'core_pkgs'
     save_artifact_tar_zstd "cache/clipos/${version}/core/build"   'core_build_logs'
 
     cosmk image 'clipos/core'
@@ -106,11 +86,11 @@ main() {
     cosmk configure 'clipos/core'
 
     cosmk bundle 'clipos/core'
-    save_artifact_tar      "out/clipos/${version}/core/bundle"    'core_bundle'
+    save_artifact_tar_zstd "out/clipos/${version}/core/bundle"    'core_bundle'
 
     # Build EFI boot
     cosmk build 'clipos/efiboot'
-    save_artifact_tar      "cache/clipos/${version}/efiboot/binpkgs" 'efiboot_pkgs'
+    save_artifact_tar_zstd "cache/clipos/${version}/efiboot/binpkgs" 'efiboot_pkgs'
     save_artifact_tar_zstd "cache/clipos/${version}/efiboot/build"   'efiboot_build_logs'
 
     cosmk image 'clipos/efiboot'
@@ -123,7 +103,7 @@ main() {
 
     # Build Debian SDK
     cosmk bootstrap 'clipos/sdk_debian'
-    save_artifact_tar      "cache/clipos/${version}/sdk_debian/rootfs.squashfs" 'sdk_debian'
+    save_artifact_tar_zstd "cache/clipos/${version}/sdk_debian/rootfs.squashfs" 'sdk_debian'
 
     # Build QEMU image
     cosmk bundle 'clipos/qemu'
