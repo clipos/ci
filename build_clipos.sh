@@ -119,8 +119,6 @@ main() {
     cosmk configure 'clipos/efiboot'
 
     cosmk bundle 'clipos/efiboot'
-    # Remove uneeded temporary directory
-    rm -rf "out/clipos/${version}/efiboot/bundle/root"
     save_artifact_tar_zstd  "out/clipos/${version}/efiboot/bundle"   'efiboot_bundle'
 
     # Build Debian SDK
