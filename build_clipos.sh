@@ -6,6 +6,9 @@ set -o errexit -o nounset -o xtrace -o pipefail
 
 save_artifact() {
     local src="${1}"
+
+    sha256sum ${src} >> SHA256SUMS
+
     upload_artifact "${src}"
 }
 
@@ -15,6 +18,8 @@ save_artifact_tar_zstd() {
 
     mkdir -p .artifacts
     bsdtar --verbose --zstd --create --file "${dst}" "${src}"
+
+    sha256sum ${dst} >> SHA256SUMS
 
     upload_artifact "${dst}"
 }
@@ -150,6 +155,9 @@ main() {
     cp  "../qemu.sh" "clipos_${version}_qemu"
 
     save_artifact_tar_zstd  "clipos_${version}_qemu"  'qemu'
+
+    upload_artifact 'SHA256SUMS'
+    cat 'SHA256SUMS'
 }
 
 main ${@}
