@@ -36,10 +36,27 @@ mput ${src}
 END_OF_LFTP_SCRIPT
 }
 
+download_extract_artifacts() {
+    # GitLab.com project ID for this repository (CLIPOS/ci)
+    local -r project_id="${CI_PROJECT_ID}"
+
+    # GitLab.com API URL to get the latest successful build
+    local -r url="https://gitlab.com/api/v4/projects/${project_id}/pipelines/latest"
+
+    # Pick the latest successful build
+    build="$(curl --proto '=https' --tlsv1.2 -sSf ${url} | jq '.id')"
+
+    ./toolkit/helpers/get-cache-from-ci.sh "${ARTIFACTS_DOWNLOAD_URL}/${build}"
+}
+
 main() {
     # https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
     if [[ -z "${ARTIFACTS_FTP_URL:+x}" ]]; then
         >&2 echo "ARTIFACTS_FTP_URL is not set or empty. Skipping artifacts upload."
+    fi
+
+    if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
+        >&2 echo "ARTIFACTS_DOWNLOAD_URL is not set or empty. Rebuilding everything from scratch."
     fi
 
     # Install Git LFS support
@@ -61,6 +78,11 @@ main() {
     set +o nounset
     source toolkit/activate
     set -o nounset
+
+    if [[ -n "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
+        # Get build artifacts from the latest successful build
+        download_extract_artifacts
+    fi
 
     # Get and save the current version
     local version="$(cosmk product-version clipos)"
