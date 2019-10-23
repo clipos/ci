@@ -98,8 +98,10 @@ main() {
     cp '../instrumentation.toml' 'instrumentation.toml'
     save_artifact 'instrumentation.toml'
 
-    # Build SDK
-    cosmk bootstrap 'clipos/sdk'
+    # Build SDK only if we rebuild from scratch
+    if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
+        cosmk bootstrap 'clipos/sdk'
+    fi
     save_artifact_tar_zstd "cache/clipos/${version}/sdk/rootfs.squashfs" 'sdk'
 
     # Build Core
@@ -128,8 +130,10 @@ main() {
     cosmk bundle 'clipos/efiboot'
     save_artifact_tar_zstd  "out/clipos/${version}/efiboot/bundle"   'efiboot_bundle'
 
-    # Build Debian SDK
-    cosmk bootstrap 'clipos/sdk_debian'
+    # Build Debian SDK only if we rebuild from scratch
+    if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
+        cosmk bootstrap 'clipos/sdk_debian'
+    fi
     save_artifact_tar_zstd "cache/clipos/${version}/sdk_debian/rootfs.squashfs" 'sdk_debian'
 
     # Build QEMU image
