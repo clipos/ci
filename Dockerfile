@@ -26,7 +26,7 @@ RUN apt-get -y -q --no-install-recommends install \
         cargo \
         runc qemu libvirt-dev libvirt-daemon \
         libarchive-tools \
-        lftp lz4 zstd curl
+        lftp lz4 zstd curl jq
 
 # Create an unprivileged user:
 RUN useradd -m -d /home/clipos -U -G users clipos
