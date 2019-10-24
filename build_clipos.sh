@@ -46,10 +46,10 @@ download_extract_artifacts() {
     local -r project_id="${CI_PROJECT_ID}"
 
     # GitLab.com API URL to get the latest successful build
-    local -r url="https://gitlab.com/api/v4/projects/${project_id}/pipelines/latest"
+    local -r url="https://gitlab.com/api/v4/projects/${project_id}/pipelines?scope=finished&status=success"
 
     # Pick the latest successful build
-    build="$(curl --proto '=https' --tlsv1.2 -sSf ${url} | jq '.id')"
+    build="$(curl --proto '=https' --tlsv1.2 -sSf "${url}" | jq '.[0].id')"
 
     ./toolkit/helpers/get-cache-from-ci.sh "${ARTIFACTS_DOWNLOAD_URL}/${build}"
 }
