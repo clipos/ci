@@ -7,19 +7,19 @@ set -o errexit -o nounset -o xtrace -o pipefail
 save_artifact() {
     local src="${1}"
 
-    sha256sum ${src} >> SHA256SUMS
+    sha256sum "${src}" >> 'SHA256SUMS'
 
     upload_artifact "${src}"
 }
 
 save_artifact_tar_zstd() {
     local src="${1}"
-    local dst=".artifacts/${2}.tar.zst"
+    local dst="${2}.tar.zst"
 
     mkdir -p .artifacts
     bsdtar --verbose --zstd --create --file "${dst}" "${src}"
 
-    sha256sum ${dst} >> SHA256SUMS
+    sha256sum "${dst}" >> 'SHA256SUMS'
 
     upload_artifact "${dst}"
 }
