@@ -46,6 +46,9 @@ download_extract_artifacts() {
     build="$(curl --proto '=https' --tlsv1.2 -sSf "${url}" | jq '.[0].id')"
 
     ./toolkit/helpers/get-cache-from-ci.sh "${ARTIFACTS_DOWNLOAD_URL}/${build}"
+
+    # Cleanup
+    rm -f SHA256SUMS *.tar.zst
 }
 
 main() {
