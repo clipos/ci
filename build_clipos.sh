@@ -29,16 +29,10 @@ upload_artifact() {
     local dest="gitlab/${CI_PIPELINE_ID}"
 
     if [[ -z "${ARTIFACTS_FTP_URL:+x}" ]]; then
-        >&2 echo "ARTIFACTS_FTP_URL is not set or empty. Skipping artifacts upload."
         return 0
     fi
 
-    cat <<END_OF_LFTP_SCRIPT | lftp
-connect ${ARTIFACTS_FTP_URL}
-mkdir -p ${dest}
-cd ${dest}
-mput ${src}
-END_OF_LFTP_SCRIPT
+    lftp -c "connect ${ARTIFACTS_FTP_URL}; cd ${dest}; mput ${src}"
 }
 
 download_extract_artifacts() {
@@ -58,6 +52,9 @@ main() {
     # https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
     if [[ -z "${ARTIFACTS_FTP_URL:+x}" ]]; then
         >&2 echo "ARTIFACTS_FTP_URL is not set or empty. Skipping artifacts upload."
+    else
+        echo "Creating artifact directory for job ${CI_PIPELINE_ID}..."
+        lftp -c "connect ${ARTIFACTS_FTP_URL}; mkdir -p gitlab/${CI_PIPELINE_ID}"
     fi
 
     if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
