@@ -95,9 +95,10 @@ main() {
     cp '../instrumentation.toml' 'instrumentation.toml'
     save_artifact 'instrumentation.toml'
 
-    # Build SDK only if we rebuild from scratch
-    if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
+    # Build SDK only if needed
+    if [[ ! -f "cache/clipos/${version}/sdk/rootfs.squashfs" ]]; then
         cosmk bootstrap 'clipos/sdk'
+        save_artifact_tar_zstd "cache/clipos/${version}/sdk/binpkgs" 'sdk_pkgs'
     fi
     save_artifact_tar_zstd "cache/clipos/${version}/sdk/rootfs.squashfs" 'sdk'
 
