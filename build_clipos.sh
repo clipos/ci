@@ -131,14 +131,11 @@ main() {
     cosmk bundle 'clipos/efiboot'
     save_artifact_tar_zstd  "out/clipos/${version}/efiboot/bundle"   'efiboot_bundle'
 
-    # Build Debian SDK only if needed
-    if [[ ! -f "cache/clipos/${version}/sdk_debian/rootfs.squashfs" ]]; then
-        cosmk bootstrap 'clipos/sdk_debian'
-    fi
-    save_artifact_tar_zstd "cache/clipos/${version}/sdk_debian/rootfs.squashfs" 'sdk_debian'
+    # Build Core state and firmwares for QEMU
+    cosmk bundle 'clipos/qemu'
 
     # Build QEMU image
-    cosmk bundle 'clipos/qemu'
+    ./testbed/create_qemu_image.sh
 
     # Prepare standalone QEMU image bundle
     mkdir -p "clipos_${version}_qemu"
@@ -150,11 +147,9 @@ main() {
         "cache/clipos/${version}/qemu/bundle/"* \
         "clipos_${version}_qemu"
 
-    mv  "out/clipos/${version}/efiboot/configure/OVMF_CODE_sb-tpm.fd" \
-        "clipos_${version}_qemu/OVMF_CODE.fd"
-
-    cp  "products/clipos/efiboot/configure.d/dummy_keys_secure_boot/OVMF_VARS.fd" \
-        "clipos_${version}_qemu"
+    tar --extract \
+        --file "out/clipos/${version}/efiboot/bundle/qemu-firmware.tar" \
+        --directory "clipos_${version}_qemu"
 
     cp  "../README_qemu.md" "clipos_${version}_qemu/README.md"
     cp  "../qemu.sh" "clipos_${version}_qemu"
