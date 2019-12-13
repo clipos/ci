@@ -131,8 +131,8 @@ main() {
     cosmk bundle 'clipos/efiboot'
     save_artifact_tar_zstd  "out/clipos/${version}/efiboot/bundle"   'efiboot_bundle'
 
-    # Build Debian SDK only if we rebuild from scratch
-    if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
+    # Build Debian SDK only if needed
+    if [[ ! -f "cache/clipos/${version}/sdk_debian/rootfs.squashfs" ]]; then
         cosmk bootstrap 'clipos/sdk_debian'
     fi
     save_artifact_tar_zstd "cache/clipos/${version}/sdk_debian/rootfs.squashfs" 'sdk_debian'
