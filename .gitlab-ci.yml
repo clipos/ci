@@ -9,8 +9,8 @@ stages:
 container:
   stage: container
   only:
-    - schedules
-  image: quay.io/buildah/stable:latest
+    - master@CLIPOS/ci
+  image: "quay.io/buildah/stable:latest"
   tags:
       - clipos
       - privileged
