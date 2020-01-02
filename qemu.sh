@@ -1,20 +1,28 @@
 #!/bin/bash
 
+
 echo ""
 echo "---------------------------------------------------------------------"
 echo "[*] Launching a standalone CLIP OS virtual machine..."
+if [[ $(basename ${0}) == "qemu-nokvm.sh" ]]; then
+    kvm=""
+    echo "[*] Running without KVM support. Additional commands may be required. See:"
+    echo "[*] https://discuss.clip-os.org/t/qemu-system-x86-64-overcommit-invalid-option-at-boot/76/10"
+else
+    kvm=",accel=kvm"
+fi
 echo "[*] See README.md for instructions."
 echo "---------------------------------------------------------------------"
 echo ""
 
+
 qemu-system-x86_64 \
     -name guest=clipos-instrumented,debug-threads=on \
-    -machine pc-q35-2.11,accel=kvm,usb=off,vmport=off,smm=on,dump-guest-core=off \
+    -machine pc-q35-2.11${kvm},usb=off,vmport=off,smm=on,dump-guest-core=off \
     -drive file=./OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on \
     -drive file=./OVMF_VARS.fd,if=pflash,format=raw,unit=1 \
-    -m 2048 \
-    -overcommit mem-lock=off \
-    -smp 2,sockets=2,cores=1,threads=1 \
+    -m 1024 \
+    -smp 1,sockets=1,cores=1,threads=1 \
     -no-user-config \
     -nodefaults \
     -rtc base=utc,driftfix=slew \
