@@ -25,6 +25,7 @@ RUN apt-get -y -q --no-install-recommends install \
         bash sudo util-linux squashfs-tools coreutils diffutils locales \
         cargo \
         runc qemu libvirt-dev libvirt-daemon libguestfs-tools \
+        linux-image-amd64 \
         libarchive-tools \
         lftp lz4 zstd curl jq
 
