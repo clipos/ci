@@ -13,7 +13,6 @@ main() {
     mkdir -p 'artifacts'
     cd 'artifacts'
 
-    # TODO: Download artifacts from GitLab CI.
     if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
         echo "ARTIFACTS_DOWNLOAD_URL is not set or empty. Skipping artifacts download."
         return 0
@@ -21,16 +20,32 @@ main() {
 
     echo "Will download artifacts from: ${ARTIFACTS_DOWNLOAD_URL}"
 
-    # GitLab.com project ID for this repository (CLIPOS/ci)
-    local -r project_id="${CI_PROJECT_ID}"
+    # GitLab access URL and API URL for the current project repository
+    local -r base_url="https://${CI_SERVER_HOST}"
+    local -r api_url="https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}"
 
-    # GitLab.com API URL to get the latest successful build
-    local -r url="https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/api/v4/projects/${project_id}/pipelines?scope=finished&status=success"
+    # URL to get the latest successful GitLab CI pipeline
+    local -r pipeline_url="${api_url}/pipelines?scope=finished&status=success"
 
     # Pick the latest successful build
-    build="$(curl --proto '=https' --tlsv1.2 -sSf "${url}" | jq '.[0].id')"
+    pipeline="$(curl --proto '=https' --tlsv1.2 -sSf "${pipeline_url}" | jq '.[0].id')"
 
-    local -r url="${ARTIFACTS_DOWNLOAD_URL}/${build}"
+    # Use a "magic" value to specify that we should use artifacts stored by
+    # GitLab
+    local url=""
+    if [[ ${ARTIFACTS_DOWNLOAD_URL} == "gitlab"  ]]; then
+        # URL to get jobs in the pipeline
+        local -r jobs_url="${api_url}/pipelines/${pipeline}/jobs"
+        # GitLab API header with access token. This is required even on public
+        # projects but only for this specific query
+        local -r token="Private-Token: ${CI_ACCESS_TOKEN}"
+        # Find the "build" job id for the latest successful pipeline
+        job_id="$(curl --proto '=https' --tlsv1.2 -sSf -H "${token}" "${jobs_url}" | jq '.[] | select((.stage == "build") and (.status == "success")) | .id')"
+
+        url="${base_url}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}/-/jobs/${job_id}/artifacts/raw/artifacts/"
+    else
+        url="${ARTIFACTS_DOWNLOAD_URL}/${pipeline}"
+    fi
     echo "[*] Retrieving artifacts from: ${url}"
 
     # List of artifacts to retrieve (Core & EFIboot packages)
