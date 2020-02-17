@@ -16,7 +16,15 @@ build:
   script:
     - ./build_clipos.sh
   after_script:
+    - ./upload_artifacts.sh
     - ./cleanup.sh
+  artifacts:
+    when: always
+    # Keep artifacts for 2 weeks by default so that we always have the last
+    # Monday 'from scratch' build available for incremental builds.
+    expire_in: 2 week
+    paths:
+      - artifacts/
 
 # Build container image for QEMU image creation with libguestfs
 # This should be triggered for a rebuild on a monthly basis.

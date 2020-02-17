@@ -9,37 +9,6 @@ set -o errexit -o nounset -o pipefail
 # Help for the bash logic frequently used in this script:
 # https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
 
-save_artifact() {
-    local src="${1}"
-
-    sha256sum "${src}" >> 'SHA256SUMS'
-
-    upload_artifact "${src}"
-}
-
-save_artifact_tar_zstd() {
-    local src="${1}"
-    local dst="${2}.tar.zst"
-
-    mkdir -p .artifacts
-    bsdtar --verbose --zstd --create --file "${dst}" "${src}"
-
-    sha256sum "${dst}" >> 'SHA256SUMS'
-
-    upload_artifact "${dst}"
-}
-
-upload_artifact() {
-    local src="${1}"
-    local dest="gitlab/${CI_PIPELINE_ID}"
-
-    if [[ -z "${ARTIFACTS_FTP_URL:+x}" ]]; then
-        return 0
-    fi
-
-    lftp -c "connect ${ARTIFACTS_FTP_URL}; cd ${dest}; mput ${src}"
-}
-
 download_extract_artifacts() {
     # GitLab.com project ID for this repository (CLIPOS/ci)
     local -r project_id="${CI_PROJECT_ID}"
@@ -57,16 +26,12 @@ download_extract_artifacts() {
 }
 
 main() {
-    if [[ -z "${ARTIFACTS_FTP_URL:+x}" ]]; then
-        >&2 echo "ARTIFACTS_FTP_URL is not set or empty. Skipping artifacts upload."
-    else
-        echo "Creating artifact directory for job ${CI_PIPELINE_ID}..."
-        lftp -c "connect ${ARTIFACTS_FTP_URL}; mkdir -p gitlab/${CI_PIPELINE_ID}"
-    fi
-
     if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
         >&2 echo "ARTIFACTS_DOWNLOAD_URL is not set or empty. Rebuilding everything from scratch."
     fi
+
+    # Directory used to retrieve and store artifacts
+    ARTIFACTS="$(realpath ${CI_PROJECT_DIR})/artifacts"
 
     # Use manifest project from current GitLab instance if no specific manifest
     # project was set.
@@ -160,9 +125,30 @@ main() {
 
     save_artifact_tar_zstd  "${product}_${version}_qemu"  'qemu'
 
+    cat "${ARTIFACTS}/SHA256SUMS"
+}
 
-    upload_artifact 'SHA256SUMS'
-    cat 'SHA256SUMS'
+save_artifact() {
+    local -r src="${1}"
+
+    sha256sum "${src}" >> "${ARTIFACTS}/SHA256SUMS"
+
+    # Small artifacts are copied to the artifacts folder to keep them available
+    # in the main project directory.
+    cp -a "${src}" "${ARTIFACTS}"
+}
+
+save_artifact_tar_zstd() {
+    local -r src="${1}"
+    local -r dst="${2}.tar.zst"
+
+    bsdtar --verbose --zstd --create --file "${dst}" "${src}"
+
+    sha256sum "${dst}" >> "${ARTIFACTS}/SHA256SUMS"
+
+    # Potentially large artifacts are moved to the artifacts folder as they are
+    # no longer needed in the main project directory.
+    mv "${dst}" "${ARTIFACTS}"
 }
 
 main ${@}
