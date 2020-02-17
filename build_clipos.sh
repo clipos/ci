@@ -64,6 +64,13 @@ main() {
         >&2 echo "ARTIFACTS_DOWNLOAD_URL is not set or empty. Rebuilding everything from scratch."
     fi
 
+    # Use manifest project from current GitLab instance if no specific manifest
+    # project was set.
+    if [[ -z ${MANIFEST_URL:+x} ]]; then
+        MANIFEST_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_NAMESPACE}/manifest"
+    fi
+    echo "Using manifest from: ${MANIFEST_URL}"
+
     # Install Git LFS support
     git lfs install --skip-repo
 
@@ -71,8 +78,7 @@ main() {
     mkdir clipos
     cd clipos
     umask 0022
-
-    repo init -u https://review.clip-os.org/clipos/manifest
+    repo init -u "${MANIFEST_URL}"
     repo sync -j8 --no-clone-bundle
 
     # Make sure LFS objects are fetched
