@@ -9,27 +9,7 @@ set -o errexit -o nounset -o pipefail
 # Help for the bash logic frequently used in this script:
 # https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
 
-download_extract_artifacts() {
-    # GitLab.com project ID for this repository (CLIPOS/ci)
-    local -r project_id="${CI_PROJECT_ID}"
-
-    # GitLab.com API URL to get the latest successful build
-    local -r url="https://gitlab.com/api/v4/projects/${project_id}/pipelines?scope=finished&status=success"
-
-    # Pick the latest successful build
-    build="$(curl --proto '=https' --tlsv1.2 -sSf "${url}" | jq '.[0].id')"
-
-    ./toolkit/helpers/get-cache-from-ci.sh "${ARTIFACTS_DOWNLOAD_URL}/${build}"
-
-    # Cleanup
-    rm -f SHA256SUMS *.tar.zst
-}
-
 main() {
-    if [[ -z "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
-        >&2 echo "ARTIFACTS_DOWNLOAD_URL is not set or empty. Rebuilding everything from scratch."
-    fi
-
     # Directory used to retrieve and store artifacts
     ARTIFACTS="$(realpath ${CI_PROJECT_DIR})/artifacts"
 
@@ -53,6 +33,8 @@ main() {
     # Make sure LFS objects are fetched
     repo forall -g lfs -c 'git lfs pull && git checkout .'
 
+    extract_artifacts
+
     # Setup config.toml
     cp '../config.toml' 'config.toml'
     save_artifact 'config.toml'
@@ -62,11 +44,6 @@ main() {
     set +o nounset
     source toolkit/activate
     set -o nounset
-
-    if [[ -n "${ARTIFACTS_DOWNLOAD_URL:+x}" ]]; then
-        # Get build artifacts from the latest successful build
-        download_extract_artifacts
-    fi
 
     # Get and save the current version
     local -r product="$(cosmk product-name)"
@@ -126,6 +103,25 @@ main() {
     save_artifact_tar_zstd  "${product}_${version}_qemu"  'qemu'
 
     cat "${ARTIFACTS}/SHA256SUMS"
+}
+
+extract_artifacts() {
+    if [[ ! -f "${ARTIFACTS}/SHA256SUMS" ]]; then
+        echo "No artifacts available. Skipping."
+        return 0
+    fi
+
+    rm "${ARTIFACTS}/SHA256SUMS"
+
+    # Extract artifacts
+    for a in "${ARTIFACTS}/"*; do
+        echo "[*] Extracting ${a}..."
+        tar --extract --file "${a}" --warning=no-unknown-keyword
+    done
+
+    # Cleanup
+    rm -rfv "${ARTIFACTS}"
+    mkdir -p "${ARTIFACTS}"
 }
 
 save_artifact() {
