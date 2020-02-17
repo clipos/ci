@@ -2,7 +2,12 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # Copyright © 2019 ANSSI. All rights reserved.
 
-set -o errexit -o nounset -o xtrace -o pipefail
+set -o errexit -o nounset -o pipefail
+# Debug
+# set -o xtrace
+
+# Help for the bash logic frequently used in this script:
+# https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
 
 save_artifact() {
     local src="${1}"
@@ -52,7 +57,6 @@ download_extract_artifacts() {
 }
 
 main() {
-    # https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
     if [[ -z "${ARTIFACTS_FTP_URL:+x}" ]]; then
         >&2 echo "ARTIFACTS_FTP_URL is not set or empty. Skipping artifacts upload."
     else
@@ -100,67 +104,62 @@ main() {
     fi
 
     # Get and save the current version
-    local version="$(cosmk product-version clipos)"
+    local -r product="$(cosmk product-name)"
+    local -r version="$(cosmk product-version)"
     echo "${version}" > version
     save_artifact 'version'
 
-    # Build SDK only if needed
-    if [[ ! -f "cache/clipos/${version}/sdk/rootfs.squashfs" ]]; then
-        cosmk bootstrap 'clipos/sdk'
-        save_artifact_tar_zstd "cache/clipos/${version}/sdk/binpkgs" 'sdk_pkgs'
+    # Build and push SDK if needed
+    cosmk bootstrap 'sdk'
+    if [[ -f "cache/${product}/${version}/sdk/binpkgs/Packages" ]]; then
+        save_artifact_tar_zstd "cache/${product}/${version}/sdk/binpkgs"   'sdk_pkgs'
+        save_artifact_tar_zstd "cache/${product}/${version}/sdk/bootstrap" 'sdk_build_logs'
     fi
-    save_artifact_tar_zstd "cache/clipos/${version}/sdk/rootfs.squashfs" 'sdk'
+    # cosmk push 'sdk'
 
     # Build Core
-    cosmk build 'clipos/core'
-    save_artifact_tar_zstd "cache/clipos/${version}/core/binpkgs" 'core_pkgs'
-    save_artifact_tar_zstd "cache/clipos/${version}/core/build"   'core_build_logs'
-
-    cosmk image 'clipos/core'
-    save_artifact_tar_zstd "cache/clipos/${version}/core/image"   'core_image_logs'
-
-    cosmk configure 'clipos/core'
-
-    cosmk bundle 'clipos/core'
-    save_artifact_tar_zstd "out/clipos/${version}/core/bundle"    'core_bundle'
+    cosmk build 'core'
+    save_artifact_tar_zstd "cache/${product}/${version}/core/binpkgs" 'core_pkgs'
+    save_artifact_tar_zstd "cache/${product}/${version}/core/build"   'core_build_logs'
+    cosmk image 'core'
+    save_artifact_tar_zstd "cache/${product}/${version}/core/image"   'core_image_logs'
+    cosmk configure 'core'
+    cosmk bundle 'core'
+    save_artifact_tar_zstd "out/${product}/${version}/core/bundle"    'core_bundle'
 
     # Build EFI boot
-    cosmk build 'clipos/efiboot'
-    save_artifact_tar_zstd "cache/clipos/${version}/efiboot/binpkgs" 'efiboot_pkgs'
-    save_artifact_tar_zstd "cache/clipos/${version}/efiboot/build"   'efiboot_build_logs'
-
-    cosmk image 'clipos/efiboot'
-    save_artifact_tar_zstd "cache/clipos/${version}/efiboot/image"   'efiboot_image_logs'
-
-    cosmk configure 'clipos/efiboot'
-
-    cosmk bundle 'clipos/efiboot'
-    save_artifact_tar_zstd  "out/clipos/${version}/efiboot/bundle"   'efiboot_bundle'
+    cosmk build 'efiboot'
+    save_artifact_tar_zstd "cache/${product}/${version}/efiboot/binpkgs" 'efiboot_pkgs'
+    save_artifact_tar_zstd "cache/${product}/${version}/efiboot/build"   'efiboot_build_logs'
+    cosmk image 'efiboot'
+    save_artifact_tar_zstd "cache/${product}/${version}/efiboot/image"   'efiboot_image_logs'
+    cosmk configure 'efiboot'
+    cosmk bundle 'efiboot'
+    save_artifact_tar_zstd  "out/${product}/${version}/efiboot/bundle"   'efiboot_bundle'
 
     # Build Core state and firmwares for QEMU
-    cosmk bundle 'clipos/qemu'
+    cosmk bundle 'qemu'
 
     # Build QEMU image
     ./testbed/create_qemu_image.sh
 
     # Prepare standalone QEMU image bundle
-    mkdir -p "clipos_${version}_qemu"
+    mkdir -p "${product}_${version}_qemu"
 
-    rm  "cache/clipos/${version}/qemu/bundle/empty.qcow2"
-
-    mv  "out/clipos/${version}/qemu/bundle/main.qcow2" \
-        "out/clipos/${version}/qemu/bundle/qemu-core-state.tar" \
-        "cache/clipos/${version}/qemu/bundle/"* \
-        "clipos_${version}_qemu"
+    mv  "run/virtual_machines/main.qcow2" \
+        "out/${product}/${version}/qemu/bundle/qemu-core-state.tar" \
+        "cache/${product}/${version}/qemu/bundle/"* \
+        "${product}_${version}_qemu"
 
     tar --extract \
-        --file "out/clipos/${version}/efiboot/bundle/qemu-firmware.tar" \
-        --directory "clipos_${version}_qemu"
+        --file "out/${product}/${version}/efiboot/bundle/qemu-firmware.tar" \
+        --directory "${product}_${version}_qemu"
 
-    cp  "../README_qemu.md" "clipos_${version}_qemu/README.md"
-    cp  "../qemu.sh" "clipos_${version}_qemu"
+    cp  "../README_qemu.md" "${product}_${version}_qemu/README.md"
+    cp  "../qemu.sh" "../qemu-nokvm.sh" "${product}_${version}_qemu"
 
-    save_artifact_tar_zstd  "clipos_${version}_qemu"  'qemu'
+    save_artifact_tar_zstd  "${product}_${version}_qemu"  'qemu'
+
 
     upload_artifact 'SHA256SUMS'
     cat 'SHA256SUMS'

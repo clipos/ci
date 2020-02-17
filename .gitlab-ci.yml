@@ -10,10 +10,9 @@ build:
   stage: build
   only:
     - master@CLIPOS/ci
-  image: "registry.gitlab.com/clipos/ci:latest"
   tags:
-      - clipos
-      - privileged
+    - clipos
+    - shell
   script:
     - ./build_clipos.sh
 
