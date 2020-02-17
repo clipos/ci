@@ -84,6 +84,10 @@ main() {
     # Make sure LFS objects are fetched
     repo forall -g lfs -c 'git lfs pull && git checkout .'
 
+    # Setup config.toml
+    cp '../config.toml' 'config.toml'
+    save_artifact 'config.toml'
+
     # Setup toolkit
     toolkit/setup.sh
     set +o nounset
@@ -99,10 +103,6 @@ main() {
     local version="$(cosmk product-version clipos)"
     echo "${version}" > version
     save_artifact 'version'
-
-    # Setup debug instrumentation level
-    cp '../instrumentation.toml' 'instrumentation.toml'
-    save_artifact 'instrumentation.toml'
 
     # Build SDK only if needed
     if [[ ! -f "cache/clipos/${version}/sdk/rootfs.squashfs" ]]; then

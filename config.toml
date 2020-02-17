@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Copyright © 2019 ANSSI. All rights reserved.
+
+[product]
+name = "clipos"
+
+[ci]
+url = "https://gitlab.com"
+registry = "registry.gitlab.com/clipos/ci"
+project_id = "14752889"
+artifacts = "https://files.clip-os.org"
+
+[development]
+instrumentation = [
+    "instrumented-core",
+    "passwordless-root-login",
+    "allow-ssh-root-login",
+    "instrumented-initramfs",
+    "initramfs-no-require-tpm",
+    "initramfs-no-tpm-lockout",
+]
+
+# vim: set ts=4 sts=4 sw=4 et ft=toml:
