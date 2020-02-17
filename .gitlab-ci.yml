@@ -5,18 +5,6 @@ stages:
   - container
   - build
 
-# Build container image
-container:
-  stage: container
-  only:
-    - master@CLIPOS/ci
-  image: "quay.io/buildah/stable:latest"
-  tags:
-      - clipos
-      - privileged
-  script:
-    - ./build_container_image.sh
-
 # Build CLIP OS
 build:
   stage: build
@@ -28,3 +16,15 @@ build:
       - privileged
   script:
     - ./build_clipos.sh
+
+# Build container image for QEMU image creation with libguestfs
+# This should be triggered for a rebuild on a monthly basis.
+container:
+  stage: container
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+  tags:
+    - clipos
+    - shell
+  script:
+    - ./build_container_image.sh
