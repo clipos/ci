@@ -57,7 +57,7 @@ main() {
         save_artifact_tar_zstd "cache/${product}/${version}/sdk/binpkgs"   'sdk_pkgs'
         save_artifact_tar_zstd "cache/${product}/${version}/sdk/bootstrap" 'sdk_build_logs'
     fi
-    # cosmk push 'sdk'
+    push_container_image $(cosmk container 'sdk')
 
     # Build Core
     cosmk build 'core'
@@ -122,6 +122,20 @@ extract_artifacts() {
     # Cleanup
     rm -rfv "${ARTIFACTS}"
     mkdir -p "${ARTIFACTS}"
+}
+
+# Login and push container image
+push_container_image() {
+    if [[ "${#}" -ne 1 ]]; then
+        >&2 echo "[!] Argument missing: container image name and tag"
+        exit 1
+    fi
+    local -r image="${1}"
+
+    podman login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+
+    echo "Pushing 'localhost/${image}' to registry '${CI_REGISTRY_IMAGE}'"
+    podman push "localhost/${image}" "${CI_REGISTRY_IMAGE}/${image}"
 }
 
 save_artifact() {
