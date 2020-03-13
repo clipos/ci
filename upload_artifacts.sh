@@ -20,14 +20,16 @@ main() {
         return 0
     fi
 
-    cd 'artifacts'
+    pushd 'artifacts'
 
     # Create remote artifact directory for current job
-    lftp -c "connect ${ARTIFACTS_FTP_URL}; mkdir -p ${CI_PIPELINE_ID}"
+    lftp -c "connect ${ARTIFACTS_FTP_URL}; mkdir -p gitlab/${CI_PIPELINE_ID}"
 
     for f in *; do
-        lftp -c "connect ${ARTIFACTS_FTP_URL}; cd ${CI_PIPELINE_ID}; mput ${f}"
+        lftp -c "connect ${ARTIFACTS_FTP_URL}; cd gitlab/${CI_PIPELINE_ID}; mput ${f}"
     done
+
+    popd
 
     echo "[*] Removing 'artifacts' directory"
     rm -rfv 'artifacts'
