@@ -33,7 +33,7 @@ build:
 container:
   stage: container
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CLIPOS_REBUILD_CONTAINER == "true"'
   tags:
     - clipos
     - shell
