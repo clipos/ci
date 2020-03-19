@@ -44,6 +44,7 @@ main() {
     set +o nounset
     source toolkit/activate
     set -o nounset
+    save_artifact 'run/bin/cosmk'
 
     # Get and save the current version
     local -r product="$(cosmk product-name)"
@@ -141,7 +142,9 @@ push_container_image() {
 save_artifact() {
     local -r src="${1}"
 
-    sha256sum "${src}" >> "${ARTIFACTS}/SHA256SUMS"
+    # Workaround to strip file path when computing SHA256 sums
+    # The double space is intentionnal (SHA256SUMS file format)
+    echo "$(sha256sum "${src}" | cut -f1 -d\ )  $(basename "${src}")" >> "${ARTIFACTS}/SHA256SUMS"
 
     # Small artifacts are copied to the artifacts folder to keep them available
     # in the main project directory.
