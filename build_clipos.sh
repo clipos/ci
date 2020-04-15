@@ -90,6 +90,7 @@ main() {
     mkdir -p "${product}_${version}_qemu"
 
     mv  "run/virtual_machines/main.qcow2" \
+        "run/virtual_machines/core_state.keyfile" \
         "out/${product}/${version}/qemu/bundle/qemu-core-state.tar" \
         "cache/${product}/${version}/qemu/bundle/"* \
         "${product}_${version}_qemu"
