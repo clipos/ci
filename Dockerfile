@@ -24,7 +24,8 @@ RUN apt-get -y -q --no-install-recommends install \
         python3 python3-venv python3-dev build-essential pkg-config \
         bash sudo util-linux squashfs-tools coreutils diffutils locales \
         cargo \
-        runc qemu libvirt-dev libvirt-daemon libguestfs-tools \
+        runc qemu qemu-utils \
+        libvirt-dev libvirt-daemon libguestfs-tools \
         linux-image-amd64 \
         libarchive-tools \
         lftp lz4 zstd curl jq
